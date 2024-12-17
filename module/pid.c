@@ -26,17 +26,16 @@ static long l_pid;
 static ssize_t proc_read(struct file *file, char *buf, size_t count, loff_t *pos);
 static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t count, loff_t *pos);
 
-static struct file_operations proc_ops = {
-        .owner = THIS_MODULE,
-        .read = proc_read,
-        .write = proc_write
+static struct proc_ops proc_ops = {
+        .proc_read = proc_read, 
+        .proc_write = proc_write
 };
 
 /* This function is called when the module is loaded. */
 static int proc_init(void)
 {
         // creates the /proc/procfs entry
-        proc_create(PROC_NAME, 0666, NULL, (struct proc_ops *)&proc_ops);
+        proc_create(PROC_NAME, 0666, NULL, &proc_ops);
 
         printk(KERN_INFO "/proc/%s created\n", PROC_NAME);
 
@@ -79,16 +78,18 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
                 tsk = pid_task(target, PIDTYPE_PID);
 
         if(tsk == NULL)
-                rv = scnprintf(buffer, sizeof(buffer), "PID %ld not found\n", l_pid);
+                scnprintf(buffer, sizeof(buffer), "PID %ld not found\n", l_pid);
         else
-                rv = scnprintf(buffer, sizeof(buffer), "command = [%s] pid = [%d] state = [%d]\n", &tsk->comm[0], tsk->pid, tsk->__state);
+                scnprintf(buffer, sizeof(buffer), "command = [%s] pid = [%d] state = [%d]\n", &tsk->comm[0], tsk->pid, tsk->__state);
         
+        rv = strlen(buffer);
+
         completed = 1;
 
         if (copy_to_user(usr_buf, buffer, rv))
         {
-                printk("%s\n", buffer);
-                rv = 0;
+                printk( KERN_INFO "Error copying to user\n");
+                rv = -1;
         }
 
         return rv;
