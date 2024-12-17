@@ -2,6 +2,7 @@
 DIR1="linux-6.10.2"
 DIR2="busybox-1.36.1"
 DRV="pid"
+ELF="flag_inter"
 
 kernel() {
     if [ ! -d "$DIR1" ]
@@ -17,8 +18,7 @@ kernel() {
     fi
     cp ./.config_linux ./$DIR1/.config ;
     make --directory=./$DIR1 -j 6 oldconfig ;
-    make --directory=./$DIR1 -j 6 ;
-    cp ./$DIR1/arch/x86/boot/bzImage ./files/bzImage
+    make --directory=./$DIR1 -j 6
 }
 
 busybox() {
@@ -37,17 +37,20 @@ busybox() {
     cp ./.config_busybox ./$DIR2/Final/.config ;
     make --directory=./$DIR2 -j 6 O=./Final/ oldconfig ;
     make --directory=./$DIR2 -j 6 O=./Final/ ;
-    make --directory=./$DIR2 -j 6 O=./Final/ install ;
-    for dir in bin sbin etc proc sys usr/bin usr/sbin drivers; do mkdir -p ./files/_install/$dir; done ;
-    cp -r ./$DIR2/Final/_install ./files/ ;
+    make --directory=./$DIR2 -j 6 O=./Final/ install
 }
 
 compile() {
+    for dir in bin sbin etc proc sys usr/bin usr/sbin drivers; do mkdir -p ./files/_install/$dir; done ;
+    cp -r ./$DIR2/Final/_install ./files/ ;
+    cp ./$DIR1/arch/x86/boot/bzImage ./files/bzImage ;
     cp ./.init ./files/_install/init ;
     chmod +x ./files/_install/init
     cp ./.makedrivers ./drivers/Makefile ;
-    make --directory=./drivers all DRV=$DRV VER=$DIR1;
+    make --directory=./drivers all DRV=$DRV VER=$DIR1 ELF=$ELF;
     cp ./drivers/*.ko ./files/_install/drivers/ ;
+    chmod +x ./drivers/$ELF ;
+    cp ./drivers/$ELF ./files/_install/ ;
     cd ./files/_install/ ;
     find . -print0 | cpio --null -ov --format=newc | gzip -9 > ./../initramfs.cpio.gz ;
     cd ./../..
@@ -57,14 +60,14 @@ run() {
     qemu-system-x86_64 -kernel ./files/bzImage \
     -nographic \
     -initrd ./files/initramfs.cpio.gz \
-    -append "console=ttyS0 nokaslr quiet"
+    -append "console=ttyS0 nokaslr nokpti quiet"
 }
 
 debug() {
     qemu-system-x86_64 -S -s -kernel ./files/bzImage \
     -nographic \
     -initrd ./files/initramfs.cpio.gz \
-    -append "console=ttyS0 nokaslr quiet" \
+    -append "console=ttyS0 nokaslr nokpti quiet" \
     -no-reboot
 }
 
@@ -73,7 +76,7 @@ _gdb() {
 }
 
 clean() {
-    make --directory=./drivers clean DRV=$DRV VER=$DIR1;
+    make --directory=./drivers clean DRV=$DRV VER=$DIR1 ELF=$ELF;
 }
 
 _end() {
