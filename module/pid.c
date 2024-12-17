@@ -18,7 +18,7 @@
 #define PROC_NAME "pid"
 
 /* the current pid */
-static long l_pid;
+static long l_pid = 0;
 
 /**
  * Function prototypes
@@ -71,7 +71,10 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
                 return 0;
         }
 
-        tsk = pid_task(find_vpid(l_pid), PIDTYPE_PID);
+        tsk = current;
+
+        if(!l_pid)
+                l_pid = tsk->pid;
 
         if(tsk == NULL)
         {
@@ -79,7 +82,7 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
                 return -1;
         }
         
-        rv = scnprintf(buffer, sizeof(buffer), "command = [%s] pid = [%d] state = [%d]\n", &tsk->comm[0], tsk->pid, tsk->__state);
+        rv = scnprintf(buffer, sizeof(buffer), "command = [%s] pid = [%ld] state = [%d]\n", &tsk->comm[0], l_pid, tsk->__state);
 
         completed = 1;
 
@@ -101,7 +104,7 @@ static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t 
         struct task_struct *tsk = NULL;
         // allocate kernel memory
         k_mem = kmalloc(count, GFP_KERNEL);
-
+        
         /* copies user space usr_buf to kernel buffer */
         if (copy_from_user(k_mem, usr_buf, count)) {
 		printk( KERN_INFO "Error copying from user\n");
@@ -110,13 +113,8 @@ static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t 
 
         sscanf(k_mem, "%ld", &pid_res);
         kfree(k_mem);
-
-        tsk = pid_task(find_vpid(l_pid), PIDTYPE_PID);
-
-        if(tsk == NULL)
-                return -1;
-        
-        tsk->pid = pid_res;
+        tsk = NULL;
+        l_pid = pid_res;
         return count;
 }
 
