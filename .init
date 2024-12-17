@@ -20,4 +20,5 @@ Welcome to linux
 
 
 !
-exec /bin/sh
+insmod ./drivers/pid.ko
+setsid cttyhack setuidgid 1337 sh

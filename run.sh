@@ -2,7 +2,6 @@
 DIR1="linux-6.10.2"
 DIR2="busybox-1.36.1"
 DRV="pid"
-ELF="pid"
 
 kernel() {
     if [ ! -d "$DIR1" ]
@@ -47,10 +46,8 @@ compile() {
     cp ./.init ./files/_install/init ;
     chmod +x ./files/_install/init
     cp ./.makedrivers ./drivers/Makefile ;
-    make --directory=./drivers all DRV=$DRV VER=$DIR1 ELF=$ELF;
+    make --directory=./drivers all DRV=$DRV VER=$DIR1;
     cp ./drivers/*.ko ./files/_install/drivers/ ;
-    chmod +x ./drivers/$ELF ;
-    cp ./drivers/$ELF ./files/_install/ ;
     cd ./files/_install/ ;
     find . -print0 | cpio --null -ov --format=newc | gzip -9 > ./../initramfs.cpio.gz ;
     cd ./../..
@@ -76,7 +73,7 @@ _gdb() {
 }
 
 clean() {
-    make --directory=./drivers clean DRV=$DRV VER=$DIR1 ELF=$ELF;
+    make --directory=./drivers clean DRV=$DRV VER=$DIR1;
 }
 
 _end() {
