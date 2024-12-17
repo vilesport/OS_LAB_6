@@ -11,9 +11,10 @@
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
 #include <linux/vmalloc.h>
+#include <linux/kernel.h>
 #include <asm/uaccess.h>
 
-#define BUFFER_SIZE 128
+#define BUFFER_SIZE 0x400
 #define PROC_NAME "pid"
 
 /* the current pid */
@@ -25,10 +26,9 @@ static long l_pid;
 static ssize_t proc_read(struct file *file, char *buf, size_t count, loff_t *pos);
 static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t count, loff_t *pos);
 
-static struct file_operations proc_ops = {
-        .owner = THIS_MODULE,
-        .read = proc_read,
-        .write = proc_write
+static struct proc_ops proc_ops = {
+        .proc_read = proc_read,
+        .proc_write = proc_write
 };
 
 /* This function is called when the module is loaded. */
@@ -73,6 +73,14 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
 
         tsk = pid_task(find_vpid(l_pid), PIDTYPE_PID);
 
+        if(tsk == NULL)
+        {
+                rv = -1;
+                return -1;
+        }
+        
+        rv = scnprintf(buffer, sizeof(buffer), "command = [%s] pid = [%d] state = [%d]\n", &tsk->comm[0], tsk->pid, tsk->__state);
+
         completed = 1;
 
         // copies the contents of kernel buffer to userspace usr_buf 
@@ -88,8 +96,9 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
  */
 static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t count, loff_t *pos)
 {
-        char *k_mem;
-
+        char *k_mem = NULL;
+        long pid_res = 0;
+        struct task_struct *tsk = NULL;
         // allocate kernel memory
         k_mem = kmalloc(count, GFP_KERNEL);
 
@@ -99,15 +108,15 @@ static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t 
                 return -1;
         }
 
-	/**
- 	 * kstrol() will not work because the strings are not guaranteed
-	 * to be null-terminated.
-	 * 
-	 * sscanf() must be used instead.
-	 */
-
+        sscanf(k_mem, "%ld", &pid_res);
         kfree(k_mem);
 
+        tsk = pid_task(find_vpid(l_pid), PIDTYPE_PID);
+
+        if(tsk == NULL)
+                return -1;
+        
+        tsk->pid = pid_res;
         return count;
 }
 
