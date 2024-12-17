@@ -14,7 +14,7 @@
 #include <linux/kernel.h>
 #include <asm/uaccess.h>
 
-#define BUFFER_SIZE 0x400
+#define BUFFER_SIZE 0x100
 #define PROC_NAME "pid"
 
 /* the current pid */
@@ -71,21 +71,24 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
                 completed = 0;
                 return 0;
         }
-        if(find_vpid(l_pid) == NULL)
+        
+        struct pid * target = find_vpid(l_pid);
+        if(target == NULL)
                 tsk = NULL;
-        else   
-                tsk = pid_task(find_vpid(l_pid), PIDTYPE_PID);
+        else
+                tsk = pid_task(target, PIDTYPE_PID);
 
         if(tsk == NULL)
-                rv = snprintf(buffer, sizeof(buffer), "PID not found\n");
+                rv = scnprintf(buffer, sizeof(buffer), "PID %ld not found\n", l_pid);
         else
-                rv = snprintf(buffer, sizeof(buffer), "command = [%s] pid = [%d] state = [%d]\n", &tsk->comm[0], tsk->pid, tsk->__state);
-
+                rv = scnprintf(buffer, sizeof(buffer), "command = [%s] pid = [%d] state = [%d]\n", &tsk->comm[0], tsk->pid, tsk->__state);
+        
         completed = 1;
 
-        // copies the contents of kernel buffer to userspace usr_buf 
-        if (copy_to_user(usr_buf, buffer, rv)) {
-                rv = -1;
+        if (copy_to_user(usr_buf, buffer, rv))
+        {
+                printk("%s\n", buffer);
+                rv = 0;
         }
 
         return rv;
