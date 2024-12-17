@@ -18,7 +18,7 @@
 #define PROC_NAME "pid"
 
 /* the current pid */
-static long l_pid = 0;
+static long l_pid;
 
 /**
  * Function prototypes
@@ -26,16 +26,17 @@ static long l_pid = 0;
 static ssize_t proc_read(struct file *file, char *buf, size_t count, loff_t *pos);
 static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t count, loff_t *pos);
 
-static struct proc_ops proc_ops = {
-        .proc_read = proc_read,
-        .proc_write = proc_write
+static struct file_operations proc_ops = {
+        .owner = THIS_MODULE,
+        .read = proc_read,
+        .write = proc_write
 };
 
 /* This function is called when the module is loaded. */
 static int proc_init(void)
 {
         // creates the /proc/procfs entry
-        proc_create(PROC_NAME, 0666, NULL, &proc_ops);
+        proc_create(PROC_NAME, 0666, NULL, (struct proc_ops *)&proc_ops);
 
         printk(KERN_INFO "/proc/%s created\n", PROC_NAME);
 
@@ -70,19 +71,15 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
                 completed = 0;
                 return 0;
         }
-
-        tsk = current;
-
-        if(!l_pid)
-                l_pid = tsk->pid;
+        if(find_vpid(l_pid) == NULL)
+                tsk = NULL;
+        else   
+                tsk = pid_task(find_vpid(l_pid), PIDTYPE_PID);
 
         if(tsk == NULL)
-        {
-                rv = -1;
-                return -1;
-        }
-        
-        rv = scnprintf(buffer, sizeof(buffer), "command = [%s] pid = [%ld] state = [%d]\n", &tsk->comm[0], l_pid, tsk->__state);
+                rv = snprintf(buffer, sizeof(buffer), "PID not found\n");
+        else
+                rv = snprintf(buffer, sizeof(buffer), "command = [%s] pid = [%d] state = [%d]\n", &tsk->comm[0], tsk->pid, tsk->__state);
 
         completed = 1;
 
@@ -101,10 +98,9 @@ static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t 
 {
         char *k_mem = NULL;
         long pid_res = 0;
-        struct task_struct *tsk = NULL;
         // allocate kernel memory
         k_mem = kmalloc(count, GFP_KERNEL);
-        
+
         /* copies user space usr_buf to kernel buffer */
         if (copy_from_user(k_mem, usr_buf, count)) {
 		printk( KERN_INFO "Error copying from user\n");
@@ -113,7 +109,7 @@ static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t 
 
         sscanf(k_mem, "%ld", &pid_res);
         kfree(k_mem);
-        tsk = NULL;
+        
         l_pid = pid_res;
         return count;
 }
