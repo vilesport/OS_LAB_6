@@ -122,11 +122,7 @@ static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t 
         }
 
         k_mem[count] = '\0'; // Ensure null termination
-        if (kstrtol(k_mem, 10, &l_pid) != 0) {
-                printk(KERN_ERR "Invalid PID input\n");
-                kfree(k_mem);
-                return -EINVAL;
-        }
+        sscanf(k_mem, "%ld", &l_pid);
         
         kfree(k_mem);
         return count;
