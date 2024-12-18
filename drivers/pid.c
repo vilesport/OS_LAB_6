@@ -85,7 +85,8 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
                 return 0;
         }
         
-        task = pid_task(find_vpid(l_pid), PIDTYPE_PID);
+        target = find_vpid(l_pid);
+        task = pid_task(target, PIDTYPE_PID);
 
         if(task == NULL)
                 rv = snprintf(buffer, BUFFER_SIZE, "PID %ld not found", l_pid);
