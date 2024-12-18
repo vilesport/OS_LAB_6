@@ -13,12 +13,10 @@
 #include <linux/vmalloc.h>
 #include <asm/uaccess.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) 
-#include <linux/minmax.h> 
-#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) 
 #define HAVE_PROC_OPS 
+#define state __state
 #endif 
 
 #define BUFFER_SIZE 0x100
@@ -97,7 +95,7 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
 
         completed = 1;
 
-        rv = snprintf(buffer, BUFFER_SIZE, "command = [%s], pid = [%d], state = [%d]\n", task->comm, task->pid, task->__state);
+        rv = snprintf(buffer, BUFFER_SIZE, "command = [%s], pid = [%d], state = [%d]\n", task->comm, task->pid, task->state);
 
         if (copy_to_user(usr_buf, buffer, rv))
         {
