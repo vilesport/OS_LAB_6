@@ -90,7 +90,7 @@ help() {
     cat README.md
 }
 
-if [ "$kernel_release" = "*microsoft*" ]; then
+if [ "$kernel_release" != "*microsoft*" ]; then
     cp ./.make ./drivers/Makefile ;
     cd ./drivers ;
     make ;
