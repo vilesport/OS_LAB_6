@@ -2,7 +2,7 @@
 DIR1="linux-6.10.2"
 DIR2="busybox-1.36.1"
 DRV="pid"
-ELF="flag_inter"
+kernel_release=$(uname -r)
 
 kernel() {
     if [ ! -d "$DIR1" ]
@@ -47,7 +47,7 @@ compile() {
     cp ./.init ./files/_install/init ;
     chmod +x ./files/_install/init
     cp ./.makedrivers ./drivers/Makefile ;
-    make --directory=./drivers all DRV=$DRV VER=$DIR1 ELF=$ELF;
+    make --directory=./drivers all DRV=$DRV VER=$DIR1;
     cp ./drivers/*.ko ./files/_install/drivers/ ;
     chmod +x ./drivers/$ELF ;
     cp ./drivers/$ELF ./files/_install/ ;
@@ -78,7 +78,7 @@ _gdb() {
 }
 
 clean() {
-    make --directory=./drivers clean DRV=$DRV VER=$DIR1 ELF=$ELF;
+    make --directory=./drivers clean DRV=$DRV VER=$DIR1;
 }
 
 _end() {
@@ -89,6 +89,14 @@ _end() {
 help() {
     cat README.md
 }
+
+if [ "$kernel_release" = "*microsoft*" ]; then
+    cp ./.make ./drivers/Makefile ;
+    cd ./drivers ;
+    make ;
+    cd .. ;
+    _end
+fi
 
 if [ $# -eq 0 ]
 then
