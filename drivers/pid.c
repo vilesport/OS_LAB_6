@@ -88,14 +88,12 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
         target = find_vpid(l_pid);
         task = pid_task(target, PIDTYPE_PID);
 
-        if(task == NULL) {
-                printk(KERN_INFO "PID %ld not found\n", l_pid);
-                return 0;
-        }
+        if(task == NULL)
+                rv = snprintf(buffer, BUFFER_SIZE, "PID %ld not found", l_pid);
+        else
+                rv = snprintf(buffer, BUFFER_SIZE, "command = [%s], pid = [%d], state = [%d]\n", task->comm, task->pid, task->state);
 
         completed = 1;
-
-        rv = snprintf(buffer, BUFFER_SIZE, "command = [%s], pid = [%d], state = [%d]\n", task->comm, task->pid, task->state);
 
         if (copy_to_user(usr_buf, buffer, rv))
         {
