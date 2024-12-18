@@ -11,8 +11,15 @@
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
 #include <linux/vmalloc.h>
-#include <linux/kernel.h>
 #include <asm/uaccess.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) 
+#include <linux/minmax.h> 
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) 
+#define HAVE_PROC_OPS 
+#endif 
 
 #define BUFFER_SIZE 0x100
 #define PROC_NAME "pid"
@@ -26,10 +33,18 @@ static long l_pid;
 static ssize_t proc_read(struct file *file, char *buf, size_t count, loff_t *pos);
 static ssize_t proc_write(struct file *file, const char __user *usr_buf, size_t count, loff_t *pos);
 
+#ifdef HAVE_PROC_OPS
 static struct proc_ops proc_ops = {
         .proc_read = proc_read, 
         .proc_write = proc_write
 };
+#else
+static struct file_operations proc_ops = {
+        .owner = THIS_MODULE,
+        .read = proc_read,
+        .write = proc_write,
+};
+#endif
 
 /* This function is called when the module is loaded. */
 static int proc_init(void)
