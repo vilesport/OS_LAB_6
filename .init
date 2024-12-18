@@ -22,3 +22,8 @@ Welcome to linux
 !
 insmod ./drivers/pid.ko
 setsid cttyhack setuidgid 1337 sh
+
+umount /proc 
+umount /sys
+umount /dev
+poweroff -d 0 -n -f

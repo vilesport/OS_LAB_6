@@ -59,6 +59,7 @@ compile() {
 run() {
     qemu-system-x86_64 -kernel ./files/bzImage \
     -nographic \
+    -no-reboot \
     -initrd ./files/initramfs.cpio.gz \
     -append "console=ttyS0 nokaslr nokpti quiet"
 }
@@ -66,6 +67,7 @@ run() {
 debug() {
     qemu-system-x86_64 -S -s -kernel ./files/bzImage \
     -nographic \
+    -no-reboot \
     -initrd ./files/initramfs.cpio.gz \
     -append "console=ttyS0 nokaslr nokpti quiet" \
     -no-reboot
