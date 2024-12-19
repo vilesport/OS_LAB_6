@@ -91,7 +91,7 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
 	completed = 1;
 	
         if(task == NULL)
-                rv = snprintf(buffer, BUFFER_SIZE, "PID %ld not found", l_pid);
+                rv = snprintf(buffer, BUFFER_SIZE, "PID %ld not found\n", l_pid);
         else
                 rv = snprintf(buffer, BUFFER_SIZE, "command = [%s], pid = [%d], state = [%d]\n", task->comm, task->pid, task->state);
 
